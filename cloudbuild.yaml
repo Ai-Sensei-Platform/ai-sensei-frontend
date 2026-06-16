@@ -1,9 +1,13 @@
 # Builds the Vite SPA into an nginx container (see Dockerfile) and deploys it to
 # Cloud Run. Replaces the auto-generated buildpacks config so VITE_API_BASE_URL
 # can be inlined at build time.
+# All values have defaults so the trigger needs NO substitution variables.
 substitutions:
   _SERVICE: ai-sensei-frontend
   _REGION: europe-west1
+  _AR_HOSTNAME: europe-west1-docker.pkg.dev
+  _AR_PROJECT_ID: ai-sensei-498811
+  _AR_REPOSITORY: cloud-run-source-deploy
   _VITE_API_BASE_URL: https://ai-api.nipporia.com
 
 steps:
