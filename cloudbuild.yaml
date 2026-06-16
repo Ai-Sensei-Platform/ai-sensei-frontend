@@ -39,3 +39,6 @@ images:
 
 options:
   logging: CLOUD_LOGGING_ONLY
+  # Tolerate extra trigger substitutions (e.g. leftovers from the old
+  # buildpacks config) instead of failing the build.
+  substitution_option: ALLOW_LOOSE
