@@ -1,0 +1,41 @@
+# Builds the Vite SPA into an nginx container (see Dockerfile) and deploys it to
+# Cloud Run. Replaces the auto-generated buildpacks config so VITE_API_BASE_URL
+# can be inlined at build time.
+substitutions:
+  _SERVICE: ai-sensei-frontend
+  _REGION: europe-west1
+  _VITE_API_BASE_URL: https://ai-api.nipporia.com
+
+steps:
+  # Build the image, baking the backend URL into the bundle.
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --build-arg
+      - VITE_API_BASE_URL=${_VITE_API_BASE_URL}
+      - -t
+      - ${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/${_SERVICE}/${_SERVICE}:$COMMIT_SHA
+      - .
+
+  # Push to Artifact Registry.
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/${_SERVICE}/${_SERVICE}:$COMMIT_SHA
+
+  # Deploy the freshly pushed image to Cloud Run.
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/${_SERVICE}/${_SERVICE}:$COMMIT_SHA
+      - --region=${_REGION}
+      - --allow-unauthenticated
+
+images:
+  - ${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/${_SERVICE}/${_SERVICE}:$COMMIT_SHA
+
+options:
+  logging: CLOUD_LOGGING_ONLY
