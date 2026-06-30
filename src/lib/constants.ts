@@ -1,11 +1,5 @@
 import type { SpeechLanguageOption } from "@/types";
 
-/**
- * Business constants shared across the app.
- * Nothing here imports React, Zustand, or any browser/transport concern.
- */
-
-/** Languages the learner can pin the tutor's speech to. `""` means auto-detect. */
 export const SPEECH_LANGUAGES = [
   { value: "ja", label: "Japanese" },
   { value: "en", label: "English" },
@@ -13,23 +7,27 @@ export const SPEECH_LANGUAGES = [
   { value: "", label: "Auto" }
 ] satisfies SpeechLanguageOption[];
 
-/**
- * Hidden prompt that asks the tutor to open the lesson with a spoken greeting.
- * Mirrors `GREETING_PROMPT` in the original backend project.
- */
-export const GREETING_PROMPT =
-  "START THE LESSON";
+export const GREETING_PROMPT = "START THE LESSON";
 
-/**
- * The most pages a student may pick for one focused lesson. Mirrors
- * `MAX_LESSON_PAGES` on the back-end.
- */
 export const MAX_LESSON_PAGES = 5;
 
-/** Gap before listening resumes so playback fully releases the audio device. */
 export const CALL_RESUME_DELAY_MS = 350;
 
-export const SILENCE_TIMEOUT_MS = 10_000;
+export const VOICE_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
+  echoCancellation: true,
+  noiseSuppression: true,
+  autoGainControl: false
+};
 
-/** File types accepted by the upload widgets. PDF only. */
+export const VAD_POSITIVE_SPEECH_THRESHOLD = 0.7;
+export const VAD_NEGATIVE_SPEECH_THRESHOLD = 0.45;
+export const VAD_MIN_SPEECH_MS = 600;
+export const VAD_REDEMPTION_MS = 900;
+export const VAD_PRE_SPEECH_PAD_MS = 600;
+
+export const VAD_MIN_RMS = 0.04;
+
+export const VAD_ASSET_BASE = "https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.30/dist/";
+export const ORT_WASM_BASE = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.27.0/dist/";
+
 export const ACCEPTED_UPLOAD_TYPES = ".pdf,application/pdf";

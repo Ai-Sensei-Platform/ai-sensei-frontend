@@ -34,6 +34,7 @@ interface SessionStore {
   maybeContinueCall: () => void;
   clearChat: () => void;
   handleMicToggle: () => void;
+  handleSpeechStart: () => void;
   handleCallToggle: () => Promise<void>;
   openPageDialog: () => void;
   closePageDialog: () => void;
@@ -69,7 +70,6 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
   setMobilePane: (mobilePane) => set({ mobilePane }),
   setSpeechLanguage: (speechLanguage) => set({ speechLanguage }),
 
-  /** Restores the saved save-cost choice once, on app start. */
   initSaveCost: () => {
     set({ saveCost: window.localStorage.getItem(SAVE_COST_KEY) === "1" });
   },
@@ -80,19 +80,15 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     set({ saveCost: next });
   },
 
-  /** A final voice transcript: caption it, then send it as a chat message. */
   handleVoiceTranscript: (transcript) => {
     const trimmed = transcript.trim();
-    // The learner is answering — close the question popup immediately.
     if (get().pendingQuestion) set({ pendingQuestion: null });
     if (trimmed) {
-      // Play the learner's words back as a caption before the teacher replies.
       useSpeechStore.getState().showUserCaption(trimmed);
       useChatStore.getState().sendMessage(trimmed);
     }
   },
 
-  /** After an answer finishes, resume listening if still on a call. */
   maybeContinueCall: () => {
     if (!get().callMode) return;
     setTimeout(() => {
@@ -102,7 +98,6 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     }, CALL_RESUME_DELAY_MS);
   },
 
-  /** Clears the chat and resets the lesson to a fresh session. */
   clearChat: () => {
     useChatStore.getState().resetMessages();
     useDocumentStore.getState().applyReference(null);
@@ -114,11 +109,6 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     useSpeechStore.getState().stopSpeaking();
   },
 
-  /**
-   * Mic button: toggle listening. Tapping it while the teacher is talking is a
-   * barge-in — abort the in-flight answer (LLM stream + queued TTS) and cut the
-   * current playback so the learner can take the floor immediately.
-   */
   handleMicToggle: () => {
     const voice = useVoiceStore.getState();
     if (voice.isListening) {
@@ -132,11 +122,16 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     }
   },
 
-  /**
-   * Call button. Ending a call tears everything down immediately; starting one
-   * opens the page-picker first so the learner confirms which pages to study —
-   * the actual call begins from {@link submitPageSelection}.
-   */
+  handleSpeechStart: () => {
+    if (!get().callMode) return;
+    const speaking = useSpeechStore.getState().isSpeaking;
+    const streaming = useChatStore.getState().isStreaming;
+    if (!speaking && !streaming) return;
+    if (get().pendingQuestion) set({ pendingQuestion: null });
+    useChatStore.getState().abort();
+    useSpeechStore.getState().stopSpeaking();
+  },
+
   handleCallToggle: async () => {
     if (get().callMode) {
       set({ callMode: false, pendingQuestion: null });
@@ -154,14 +149,12 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     set({ pageDialogOpen: true });
   },
 
-  /** Open the page-picker (e.g. to edit the lesson pages mid-call). */
   openPageDialog: () => {
     useChatStore.getState().abort();
     useSpeechStore.getState().stopSpeaking();
     set({ pageDialogOpen: true });
   },
 
-  /** Close the page-picker without changing anything. */
   closePageDialog: () => set({ pageDialogOpen: false }),
 
   submitPageSelection: async (pages) => {
@@ -170,7 +163,6 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     const cleaned = pages.length > 0 ? pages : [1];
     set({ selectedPages: cleaned, pageDialogOpen: false });
 
-    // Editing pages during an active call — nothing else to do.
     if (get().callMode) return;
 
     const voice = useVoiceStore.getState();
@@ -182,21 +174,19 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
 
     if (!get().hasIntroduced) {
       set({ hasIntroduced: true });
+      void voice.startSession();
       useChatStore.getState().sendMessage(GREETING_PROMPT, { hidden: true });
     } else {
       voice.start();
     }
   },
 
-  /** Upload button: reset the chat, then upload the new lesson document. */
   handleUpload: async (file) => {
     useChatStore.getState().resetMessages();
-    // A new document is a fresh lesson — reset the page selection to page 1.
     set({ selectedPages: [1], pageDialogOpen: false });
     return useDocumentStore.getState().uploadFile(file);
   },
 
-  /** Library switch: reset the chat, then load an existing document. */
   handleSwitchDocument: async (documentId) => {
     const docs = useDocumentStore.getState();
     if (docs.loadedDocument?.document.id === documentId) {
@@ -208,12 +198,10 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       set({ callMode: false });
       useVoiceStore.getState().cancel();
     }
-    // A different document is a fresh lesson — reset the page selection.
     set({ hasIntroduced: false, selectedPages: [1], pageDialogOpen: false, pendingQuestion: null });
     await docs.selectDocument(documentId);
   },
 
-  /** Back button: tear down the lesson and return to the upload/library view. */
   closeDocument: () => {
     useChatStore.getState().resetMessages();
     useSpeechStore.getState().stopSpeaking();

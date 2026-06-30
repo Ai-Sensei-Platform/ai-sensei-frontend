@@ -6,48 +6,57 @@ import type { MicPermission } from "@/types";
 
 interface VoiceStore {
   isListening: boolean;
+  isUserSpeaking: boolean;
   isTranscribing: boolean;
   isSupported: boolean;
+  micMuted: boolean;
   permission: MicPermission;
   init: () => void;
   requestPermission: () => Promise<boolean>;
+  startSession: () => Promise<void>;
   start: () => Promise<void>;
   stop: () => void;
   cancel: () => void;
+  toggleMicMuted: () => void;
 }
 
-// One recorder instance for the app lifetime; the store mirrors its state.
 const recorder = new VoiceRecorder();
 
-/**
- * Voice store: microphone permission, recording, and the
- * transcription round-trip.
- */
-export const useVoiceStore = create<VoiceStore>((set) => {
+export const useVoiceStore = create<VoiceStore>((set, get) => {
   recorder.onState = (patch) => {
     if (patch.isListening) useSpeechStore.getState().clearCaption();
     set(patch);
   };
   recorder.onTranscript = (text) =>
     useSessionStore.getState().handleVoiceTranscript(text);
+  recorder.onSpeechStart = () => useSessionStore.getState().handleSpeechStart();
   recorder.onError = (message) => useSessionStore.getState().setError(message);
-  // Read lazily so the latest UI language selection is used at upload time.
   recorder.getLanguage = () => useSessionStore.getState().speechLanguage || undefined;
 
   return {
     isListening: false,
+    isUserSpeaking: false,
     isTranscribing: false,
     isSupported: true,
+    micMuted: false,
     permission: "unknown",
 
-    /** Detects support and begins watching the live permission state. */
     init: () => {
       set({ isSupported: recorder.isSupportedNow() });
       recorder.watchPermission();
     },
     requestPermission: () => recorder.requestPermission(),
+    startSession: () => recorder.startSession(),
     start: () => recorder.start(),
     stop: () => recorder.stop(),
-    cancel: () => recorder.cancel()
+    cancel: () => {
+      set({ micMuted: false });
+      recorder.cancel();
+    },
+    toggleMicMuted: () => {
+      const next = !get().micMuted;
+      set({ micMuted: next });
+      recorder.setUserMuted(next);
+    }
   };
 });
