@@ -30,11 +30,6 @@ interface WorkspaceMenuProps {
   onRestart: () => void;
 }
 
-/**
- * Single overflow control for the document workspace. Collapses every
- * secondary action — Teaching pages, fullscreen, transcript, captions, and
- * restart — into one mobile-style dropdown so the document stays uncluttered.
- */
 export function WorkspaceMenu({
   showTranscript,
   showCaption,

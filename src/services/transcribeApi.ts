@@ -1,19 +1,18 @@
 import type { SpeechLanguage } from "@/types";
 import { api, extractErrorMessage } from "@/services/apiBase";
 
-/**
- * Speech-to-text transport. Talks to the backend's `/api/transcribe`.
- */
 export async function transcribeRecording(
   blob: Blob,
   language?: SpeechLanguage,
   signal?: AbortSignal
 ): Promise<string> {
-  const extension = blob.type.includes("ogg")
-    ? "ogg"
-    : blob.type.includes("mp4")
-      ? "m4a"
-      : "webm";
+  const extension = blob.type.includes("wav")
+    ? "wav"
+    : blob.type.includes("ogg")
+      ? "ogg"
+      : blob.type.includes("mp4")
+        ? "m4a"
+        : "webm";
 
   const formData = new FormData();
   formData.append(
