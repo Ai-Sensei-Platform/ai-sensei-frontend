@@ -4,10 +4,12 @@ import { FloatingTutor } from "./FloatingTutor";
 import { MicPermissionDialog } from "./MicPermissionDialog";
 import { PageSelectionDialog } from "./PageSelectionDialog";
 import { TranscriptDrawer } from "./TranscriptDrawer";
+import { TutorRestingState } from "./TutorRestingState";
 import { CaptionStrip } from "./TeacherPanel/CaptionStrip";
 import { MicStatusBanner } from "./TeacherPanel/MicStatusBanner";
 import { deriveOrbState } from "./TeacherPanel/status";
 import { useMicDialog } from "@/hooks/teacher/useMicDialog";
+import { useThinkingCue } from "@/hooks/teacher/useThinkingCue";
 import { useSpeechStore } from "@/store/speechStore";
 
 interface CallOverlayProps {
@@ -68,19 +70,21 @@ export function CallOverlay({
     callMode
   });
 
+  const isThinking = useThinkingCue({
+    isStreaming,
+    isSpeaking,
+    isListening,
+    isTranscribing,
+    isPaused,
+    callMode
+  });
+
   return (
     <>
-      <FloatingTutor state={orbState} />
+      <FloatingTutor state={orbState} thinking={isThinking} />
 
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex flex-col items-center gap-2 px-3 pb-[calc(env(safe-area-inset-bottom)+12px)]">
-        {error ? (
-          <div
-            className="pointer-events-auto max-w-[min(560px,92vw)] rounded-xl border border-[oklch(0.5_0.12_30)] bg-[oklch(0.28_0.07_30/0.92)] px-3.5 py-2 text-center text-[0.88rem] font-semibold text-[oklch(0.9_0.1_32)] shadow-[0_10px_28px_oklch(0.1_0.03_30/0.45)] backdrop-blur-[8px]"
-            role="alert"
-          >
-            {error}
-          </div>
-        ) : null}
+        {error ? <TutorRestingState variant="overlay" /> : null}
 
         {(!micSupported || micBlocked) ? (
           <div className="pointer-events-auto">
