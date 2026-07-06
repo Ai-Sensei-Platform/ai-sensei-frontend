@@ -9,11 +9,14 @@ import { ProcessingState } from "./ProcessingState";
 
 interface UploadPanelProps {
   uploadState: UploadState;
+  uploadProgress: number;
+  uploadPhase: "uploading" | "processing";
   error: string | null;
   library: DocumentSummary[];
   libraryLoading: boolean;
   deletingId: string | null;
   onFile: (file: File | null) => void;
+  onReject: (message: string) => void;
   onSelect: (documentId: string) => void;
   onDelete: (documentId: string) => void;
 }
@@ -25,17 +28,22 @@ const surface = cx(
 
 export function UploadPanel({
   uploadState,
+  uploadProgress,
+  uploadPhase,
   error,
   library,
   libraryLoading,
   deletingId,
   onFile,
+  onReject,
   onSelect,
   onDelete
 }: UploadPanelProps) {
   const { t } = useTranslation();
   if (uploadState === "processing") {
-    return <ProcessingState surfaceClass={surface} />;
+    return (
+      <ProcessingState surfaceClass={surface} progress={uploadProgress} phase={uploadPhase} />
+    );
   }
 
   if (libraryLoading && library.length === 0) {
@@ -79,7 +87,7 @@ export function UploadPanel({
             {t("upload.orUploadNew")}
           </h3>
         )}
-        <DropZone onFile={onFile} />
+        <DropZone onFile={onFile} onReject={onReject} />
         <p className="mt-3 inline-flex items-center gap-1.5 text-[0.8rem] text-muted">
           <Info size={14} aria-hidden className="flex-none" />
           {t("upload.pdfHint")}
