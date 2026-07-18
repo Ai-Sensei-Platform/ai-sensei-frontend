@@ -26,14 +26,8 @@ export interface DocumentRecord {
 
 export type DocumentSummary = DocumentRecord;
 
-export interface DocumentPage {
-  pageNumber: number;
-  text: string;
-}
-
 export interface LoadedDocument {
   document: DocumentRecord;
-  pages: DocumentPage[];
   fileUrl: string | null;
 }
 
@@ -67,15 +61,15 @@ export interface ChatPayload {
   message: string;
   language: SpeechLanguage;
   messages: ChatHistoryMessage[];
-
   selectedPages: number[];
-  saveCost: boolean;
+  teacherAsks: boolean;
 }
 
 export type StreamEvent =
   | { event: "meta"; data: { reference: DocumentReference | null } }
   | { event: "delta"; data: { text: string } }
   | { event: "question"; data: { text: string } }
+  | { event: "end-session"; data: Record<string, never> }
   | { event: "speech-start"; data: { id: number; text: string; markers: number[] } }
   | { event: "speech-chunk"; data: { id: number; audio: string } }
   | { event: "speech-end"; data: { id: number } }

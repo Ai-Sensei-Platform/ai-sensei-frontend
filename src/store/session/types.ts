@@ -5,7 +5,6 @@ export interface UiSlice {
   error: string | null;
   mobilePane: MobilePane;
   speechLanguage: SpeechLanguage;
-  saveCost: boolean;
   showTranscript: boolean;
   showCaption: boolean;
   pendingQuestion: string | null;
@@ -17,8 +16,6 @@ export interface UiSlice {
   toggleCaption: () => void;
   setMobilePane: (mobilePane: MobilePane) => void;
   setSpeechLanguage: (speechLanguage: SpeechLanguage) => void;
-  initSaveCost: () => void;
-  toggleSaveCost: () => void;
 }
 
 /** Voice-call lifecycle: mic, page selection, and call start/stop. */
@@ -27,13 +24,22 @@ export interface CallSlice {
   hasIntroduced: boolean;
   selectedPages: number[];
   pageDialogOpen: boolean;
+  preparingPages: boolean;
+  prepareError: string | null;
+  teacherAsks: boolean;
+  silentRounds: number;
+  awaitingPresence: boolean;
+  toggleTeacherAsks: () => void;
   handleVoiceTranscript: (transcript: string) => void;
   maybeContinueCall: () => void;
   handleMicToggle: () => void;
+  endCall: () => void;
   handleCallToggle: () => Promise<void>;
   openPageDialog: () => void;
   closePageDialog: () => void;
   submitPageSelection: (pages: number[]) => Promise<void>;
+  retryPreparePages: () => Promise<void>;
+  cancelPreparePages: () => void;
 }
 
 /** Document-session lifecycle: reset, upload, switch, and close. */
