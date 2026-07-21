@@ -1,20 +1,17 @@
 import { create } from "zustand";
-import {
-  deleteDocument as deleteDocumentRequest,
-  fetchDocument,
-  listDocuments,
-  uploadDocument
-} from "@/services/documentsApi";
+import { deleteDocument as deleteDocumentRequest, fetchDocument, listDocuments, uploadDocument } from "@/services/documentsApi";
+import { toErrorMessage } from "@/lib/errors";
 import { useSessionStore } from "./sessionStore";
-import type {
-  DocumentCitation,
-  DocumentReference,
-  DocumentSummary,
-  LoadedDocument,
-  UploadState
-} from "@/types";
+import { reduceExtraction } from "./extractionReducer";
+import { startExtractionWatch, stopExtractionWatch } from "./extractionStreamRunner";
+import type { DocumentCitation, DocumentReference, DocumentSummary, ExtractionState, LoadedDocument, PageExtractionStreamEvent, UploadState } from "@/types";
 
-const LAST_DOC_KEY = "lastDocumentId";
+const CLOSED_DOCUMENT_STATE = {
+  loadedDocument: null,
+  highlight: null,
+  activePage: 1,
+  activeCitationKey: null
+} as const;
 
 interface DocumentStore {
   loadedDocument: LoadedDocument | null;
@@ -30,6 +27,9 @@ interface DocumentStore {
   deletingId: string | null;
 
   uploadError: string | null;
+  extraction: Record<string, ExtractionState>;
+  applyExtractionEvent: (documentId: string, event: PageExtractionStreamEvent) => void;
+  clearExtraction: (documentId: string) => void;
   setActivePage: (activePage: number) => void;
   setUploadError: (uploadError: string | null) => void;
   applyReference: (reference: DocumentReference | null) => void;
@@ -54,6 +54,22 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
   libraryLoading: false,
   deletingId: null,
   uploadError: null,
+  extraction: {},
+
+  applyExtractionEvent: (documentId, event) =>
+    set((state) => ({
+      extraction: {
+        ...state.extraction,
+        [documentId]: reduceExtraction(state.extraction[documentId], event)
+      }
+    })),
+
+  clearExtraction: (documentId) =>
+    set((state) => {
+      const extraction = { ...state.extraction };
+      delete extraction[documentId];
+      return { extraction };
+    }),
 
   setActivePage: (activePage) => set({ activePage, activeCitationKey: null }),
 
@@ -63,11 +79,9 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     const firstCitation = reference?.citations[0] ?? null;
     set({
       highlight: reference,
-      activeCitationKey: firstCitation ? citationKey(firstCitation) : null
+      activeCitationKey: firstCitation ? citationKey(firstCitation) : null,
+      ...(reference ? { activePage: reference.pageNumber } : null)
     });
-    if (reference) {
-      set({ activePage: reference.pageNumber });
-    }
   },
 
   focusCitation: (citation) => {
@@ -83,9 +97,7 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
       const documents = await listDocuments();
       set({ library: documents });
     } catch (error) {
-      useSessionStore
-        .getState()
-        .setError(error instanceof Error ? error.message : "Library failed to load.");
+      useSessionStore.getState().setError(toErrorMessage(error, "Library failed to load."));
     } finally {
       set({ libraryLoading: false });
     }
@@ -103,11 +115,8 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
         loadedDocument: data,
         activePage: 1
       });
-      window.localStorage.setItem(LAST_DOC_KEY, documentId);
     } catch (error) {
-      useSessionStore
-        .getState()
-        .setError(error instanceof Error ? error.message : "Document failed to load.");
+      useSessionStore.getState().setError(toErrorMessage(error, "Document failed to load."));
     } finally {
       set({ uploadState: "idle" });
     }
@@ -140,24 +149,22 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
 
       const data = await fetchDocument(documentId);
       set({ loadedDocument: data, activePage: 1 });
-      window.localStorage.setItem(LAST_DOC_KEY, documentId);
       void get().loadLibrary();
+      startExtractionWatch(documentId);
       return documentId;
     } catch (error) {
-      set({ uploadError: error instanceof Error ? error.message : "Upload failed." });
+      set({ uploadError: toErrorMessage(error, "Upload failed.") });
       return null;
     } finally {
       set({ uploadState: "idle", uploadProgress: 0, uploadPhase: "uploading" });
     }
   },
 
-  closeDocument: () =>
-    set({
-      loadedDocument: null,
-      highlight: null,
-      activePage: 1,
-      activeCitationKey: null
-    }),
+  closeDocument: () => {
+    const documentId = get().loadedDocument?.document.id;
+    if (documentId) stopExtractionWatch(documentId);
+    set({ ...CLOSED_DOCUMENT_STATE });
+  },
 
   deleteDocument: async (documentId) => {
     if (get().deletingId) return;
@@ -165,24 +172,16 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     useSessionStore.getState().setError(null);
     try {
       await deleteDocumentRequest(documentId);
+      stopExtractionWatch(documentId);
+      get().clearExtraction(documentId);
       set((state) => ({
         library: state.library.filter((doc) => doc.id !== documentId)
       }));
-      if (window.localStorage.getItem(LAST_DOC_KEY) === documentId) {
-        window.localStorage.removeItem(LAST_DOC_KEY);
-      }
       if (get().loadedDocument?.document.id === documentId) {
-        set({
-          loadedDocument: null,
-          highlight: null,
-          activePage: 1,
-          activeCitationKey: null
-        });
+        set({ ...CLOSED_DOCUMENT_STATE });
       }
     } catch (error) {
-      useSessionStore
-        .getState()
-        .setError(error instanceof Error ? error.message : "Delete failed.");
+      useSessionStore.getState().setError(toErrorMessage(error, "Delete failed."));
     } finally {
       set({ deletingId: null });
     }
@@ -196,3 +195,4 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
 export function citationKey(citation: DocumentCitation): string {
   return `${citation.pageNumber}:${citation.start}:${citation.end}`;
 }
+
