@@ -1,5 +1,6 @@
-import type { ChatMessage, SpeechCaption, SpeechLanguage } from "@/types";
+import type { ChatMessage, ExtractionState, SpeechCaption, SpeechLanguage } from "@/types";
 import { MicPermissionDialog } from "../MicPermissionDialog";
+import { PagePreparingDialog } from "../PagePreparingDialog";
 import { PageSelectionDialog } from "../PageSelectionDialog";
 import { TeacherAvatar } from "../TeacherAvatar";
 import { SessionControlBar } from "@/components/workspace/controls/SessionControlBar";
@@ -31,6 +32,7 @@ interface TeacherPanelProps {
   pageCount: number;
   selectedPages: number[];
   pageDialogOpen: boolean;
+  extraction?: ExtractionState;
   onSpeechLanguageChange: (language: SpeechLanguage) => void;
   onMicToggle: () => void;
   onCallToggle: () => void | Promise<void>;
@@ -54,6 +56,7 @@ export function TeacherPanel({
   pageCount,
   selectedPages,
   pageDialogOpen,
+  extraction,
   onClosePageDialog,
   onSubmitPageSelection
 }: TeacherPanelProps) {
@@ -104,11 +107,14 @@ export function TeacherPanel({
 
       <MicPermissionDialog open={micDialog.open} onClose={() => micDialog.setOpen(false)} />
 
+      <PagePreparingDialog />
+
       {pageDialogOpen ? (
         <PageSelectionDialog
           pageCount={pageCount}
           selectedPages={selectedPages}
           callMode={callMode}
+          extraction={extraction}
           onConfirm={onSubmitPageSelection}
           onCancel={onClosePageDialog}
         />

@@ -5,10 +5,13 @@ import { QuestionPopup } from "../teacher/QuestionPopup";
 import { DesktopLayout } from "./DesktopLayout";
 import { MobileLayout } from "./MobileLayout";
 import { useWorkspaceState } from "@/hooks/workspace/useWorkspaceState";
+import { useSpacebarPause } from "@/hooks/workspace/useSpacebarPause";
 
 export function TeachingWorkspace() {
   const vm = useWorkspaceState();
-  const { loadedDocument, session, documentStore } = vm;
+  const { loadedDocument, session } = vm;
+
+  useSpacebarPause();
 
   if (!loadedDocument) return null;
 
@@ -16,12 +19,9 @@ export function TeachingWorkspace() {
     <DocumentBoard
       fileUrl={loadedDocument.fileUrl}
       mimeType={loadedDocument.document.mimeType}
-      pageCount={loadedDocument.document.pageCount}
       activePage={vm.activePage}
       highlight={vm.highlight}
       activeCitationKey={vm.activeCitationKey}
-      onPageChange={documentStore.setActivePage}
-      onFocusCitation={documentStore.focusCitation}
       onReady={vm.handleBoardReady}
       onProgress={vm.handleLoadProgress}
     />
@@ -37,10 +37,13 @@ export function TeachingWorkspace() {
     <WorkspaceMenu
       showTranscript={vm.showTranscript}
       showCaption={vm.showCaption}
+      teacherAsks={vm.teacherAsks}
+      teacherAsksDisabled={vm.callMode}
       restartDisabled={vm.restartDisabled}
       onEditPages={session.openPageDialog}
       onToggleTranscript={session.toggleTranscript}
       onToggleCaption={session.toggleCaption}
+      onToggleTeacherAsks={session.toggleTeacherAsks}
       onRestart={session.clearChat}
     />
   );

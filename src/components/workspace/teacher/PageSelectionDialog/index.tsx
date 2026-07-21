@@ -1,68 +1,62 @@
 import { BookOpen, Check, Phone, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useEscapeKey } from "@/hooks/useEscapeKey";
 import { MAX_LESSON_PAGES } from "@/lib/constants";
+import { normalizePageSelection, pageStatus } from "@/lib/pageSelection";
 import { cx, ui } from "@/lib/uiClasses";
-import {
-  counter,
-  fade,
-  grid,
-  iconOverride,
-  pageButtonActive,
-  pageButtonBase,
-  pageButtonIdle
-} from "@/styles/components/workspace/teacher/pageSelectionDialog";
+import { counter, fade, grid, iconOverride } from "@/styles/components/workspace/teacher/pageSelectionDialog";
+import type { ExtractionState } from "@/types";
+import { ExtractionProgressRow } from "./ExtractionProgressRow";
+import { PageButton } from "./PageButton";
 
 interface PageSelectionDialogProps {
-
   pageCount: number;
-
   selectedPages: number[];
-
   callMode: boolean;
+  extraction?: ExtractionState;
   onConfirm: (pages: number[]) => void;
   onCancel: () => void;
-}
-
-function normalize(pages: number[], pageCount: number): number[] {
-  return Array.from(new Set(pages))
-    .filter((page) => page >= 1 && page <= pageCount)
-    .sort((a, b) => a - b)
-    .slice(0, MAX_LESSON_PAGES);
 }
 
 export function PageSelectionDialog({
   pageCount,
   selectedPages,
   callMode,
+  extraction,
   onConfirm,
   onCancel
 }: PageSelectionDialogProps) {
+
   const { t } = useTranslation();
-  const [chosen, setChosen] = useState<number[]>(() =>
-    normalize(selectedPages, pageCount)
-  );
+  const [chosen, setChosen] = useState<number[]>(() => normalizePageSelection(selectedPages, pageCount));
 
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onCancel();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onCancel]);
+  useEscapeKey(onCancel);
 
-  const atLimit = chosen.length >= MAX_LESSON_PAGES;
+  const selected = chosen.filter((page) => pageStatus(page, extraction) === "ready");
+
+  const atLimit = selected.length >= MAX_LESSON_PAGES;
   const pages = Array.from({ length: pageCount }, (_, i) => i + 1);
+  const showProgress = extraction !== undefined && !extraction.done;
+  const readyCount = extraction ? extraction.extractedPages.length : pageCount;
 
   const toggle = (page: number) => {
-    setChosen((prev) => {
-      if (prev.includes(page)) return prev.filter((p) => p !== page);
-      if (prev.length >= MAX_LESSON_PAGES) return prev;
-      return [...prev, page].sort((a, b) => a - b);
+    setChosen(() => {
+      if (selected.includes(page)) return selected.filter((p) => p !== page);
+      if (selected.length >= MAX_LESSON_PAGES) return selected;
+      return [...selected, page].sort((a, b) => a - b);
     });
   };
 
-  const confirm = () => onConfirm(chosen.length > 0 ? chosen : [1]);
+  const confirm = () => onConfirm(selected.length > 0 ? selected : [1]);
+
+  const titleFor = (page: number, status: ReturnType<typeof pageStatus>, active: boolean) => {
+    if (status === "extracting") return t("dialogs.pages.pageExtracting", { page });
+    if (status === "pending") return t("dialogs.pages.pagePending");
+    if (status === "failed") return t("dialogs.pages.pageFailed");
+    if (!active && atLimit) return t("dialogs.pages.pageAtMost", { max: MAX_LESSON_PAGES });
+    return t("dialogs.pages.pageLabel", { page });
+  };
 
   return (
     <div className={ui.modalBackdrop} onClick={onCancel}>
@@ -88,13 +82,17 @@ export function PageSelectionDialog({
           </div>
         </div>
 
+        {showProgress ? (
+          <ExtractionProgressRow readyCount={readyCount} pageCount={pageCount} />
+        ) : null}
+
         <div className={counter} aria-live="polite">
           <span>
-            {t("dialogs.pages.selected", { count: chosen.length, max: MAX_LESSON_PAGES })}
+            {t("dialogs.pages.selected", { count: selected.length, max: MAX_LESSON_PAGES })}
           </span>
-          {chosen.length > 0 ? (
+          {selected.length > 0 ? (
             <span className="font-medium text-muted">
-              {t("dialogs.pages.teaching", { pages: chosen.join(", ") })}
+              {t("dialogs.pages.teaching", { pages: selected.join(", ") })}
             </span>
           ) : null}
         </div>
@@ -102,32 +100,19 @@ export function PageSelectionDialog({
         <div className="relative -mx-1">
           <div className={grid}>
             {pages.map((page) => {
-              const active = chosen.includes(page);
-              const disabled = !active && atLimit;
+              const status = pageStatus(page, extraction);
+              const active = selected.includes(page);
               return (
-                <button
+                <PageButton
                   key={page}
-                  type="button"
-                  aria-pressed={active}
-                  aria-label={t("dialogs.pages.pageLabel", { page })}
-                  title={
-                    disabled
-                      ? t("dialogs.pages.pageAtMost", { max: MAX_LESSON_PAGES })
-                      : t("dialogs.pages.pageLabel", { page })
-                  }
-                  disabled={disabled}
-                  onClick={() => toggle(page)}
-                  className={cx(pageButtonBase, active ? pageButtonActive : pageButtonIdle)}
-                >
-                  {page}
-                  {active ? (
-                    <Check
-                      size={12}
-                      className="absolute right-1 top-1 opacity-90"
-                      aria-hidden
-                    />
-                  ) : null}
-                </button>
+                  page={page}
+                  status={status}
+                  active={active}
+                  disabled={status !== "ready" || (!active && atLimit)}
+                  label={t("dialogs.pages.pageLabel", { page })}
+                  title={titleFor(page, status, active)}
+                  onToggle={toggle}
+                />
               );
             })}
           </div>
@@ -144,7 +129,7 @@ export function PageSelectionDialog({
             className={cx(ui.button, ui.buttonPrimary)}
             type="button"
             onClick={confirm}
-            disabled={chosen.length === 0}
+            disabled={selected.length === 0}
             autoFocus
           >
             {callMode ? <Check size={16} aria-hidden /> : <Phone size={16} aria-hidden />}

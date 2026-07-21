@@ -26,14 +26,8 @@ export interface DocumentRecord {
 
 export type DocumentSummary = DocumentRecord;
 
-export interface DocumentPage {
-  pageNumber: number;
-  text: string;
-}
-
 export interface LoadedDocument {
   document: DocumentRecord;
-  pages: DocumentPage[];
   fileUrl: string | null;
 }
 
@@ -67,20 +61,48 @@ export interface ChatPayload {
   message: string;
   language: SpeechLanguage;
   messages: ChatHistoryMessage[];
-
   selectedPages: number[];
-  saveCost: boolean;
+  teacherAsks: boolean;
 }
 
 export type StreamEvent =
   | { event: "meta"; data: { reference: DocumentReference | null } }
   | { event: "delta"; data: { text: string } }
   | { event: "question"; data: { text: string } }
+  | { event: "end-session"; data: Record<string, never> }
   | { event: "speech-start"; data: { id: number; text: string; markers: number[] } }
   | { event: "speech-chunk"; data: { id: number; audio: string } }
   | { event: "speech-end"; data: { id: number } }
   | { event: "done"; data: Record<string, unknown> }
   | { event: "error"; data: { error: string } };
+
+export type PageExtractionStreamEvent =
+  | {
+    event: "progress";
+    data: {
+      pageCount: number;
+      extracted: number[];
+      failed: number[];
+      extracting?: number[];
+      done: boolean;
+    };
+  }
+  | { event: "page-start"; data: { page: number } }
+  | { event: "page-ready"; data: { page: number } }
+  | { event: "page-failed"; data: { page: number } }
+  | { event: "done"; data: Record<string, never> }
+  | { event: "ping"; data: Record<string, never> }
+  | { event: "error"; data: { error: string } };
+
+export interface ExtractionState {
+  status: "connecting" | "extracting" | "done" | "error";
+  pageCount: number;
+  extractedPages: number[];
+  failedPages: number[];
+  currentPage: number | null;
+  currentPages: number[];
+  done: boolean;
+}
 
 export interface SegmentedText {
   words: string[];

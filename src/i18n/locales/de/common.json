@@ -37,16 +37,15 @@
     "yourDocuments": "Deine Dokumente",
     "orUploadNew": "Oder lade eine neue Datei hoch",
     "uploadTitle": "Lektionsquelle hochladen",
-    "pdfLimit": "PDF-Dateien bis zu 25 MB.",
+    "pdfLimit": "PDF-Dateien bis zu 30 MB.",
     "dropHint": "Lege eine Datei hier ab oder <choose>wähle eine Datei</choose>",
-    "pdfHint": "Verwende ein textbasiertes PDF. Reine Bild- oder gescannte Dokumente können nicht gelesen werden und funktionieren nicht.",
     "uploadingTitle": "Dein Dokument wird hochgeladen",
     "uploadingBody": "Deine Datei wird gesendet — bitte lass diesen Tab geöffnet.",
     "processingTitle": "Dein Dokument wird vorbereitet",
     "processingBody": "Seiten werden extrahiert, Lektionsabschnitte erstellt und der Lehrer wird vorbereitet.",
     "loadingLibrary": "Deine Bibliothek wird geladen …",
     "errorType": "Diese Datei ist kein PDF. Bitte wähle ein PDF-Dokument.",
-    "errorSize": "Diese Datei ist zu groß. Bitte wähle ein PDF unter 25 MB.",
+    "errorSize": "Diese Datei ist zu groß. Bitte wähle ein PDF unter 30 MB.",
     "dropActive": "Loslassen, um dein PDF hochzuladen",
     "dropAria": "Ein PDF hochladen — Datei hier ablegen oder eine auswählen"
   },
@@ -97,7 +96,22 @@
       "pageLabel": "Seite {{page}}",
       "pageAtMost": "Du kannst höchstens {{max}} Seiten auswählen",
       "updatePages": "Seiten aktualisieren",
-      "startLesson": "Lektion starten"
+      "startLesson": "Lektion starten",
+      "ready": "{{ready}} von {{total}} Seiten bereit",
+      "pageExtracting": "Seite {{page}} wird gelesen…",
+      "pagePending": "Diese Seite ist noch nicht bereit",
+      "pageFailed": "Diese Seite konnte nicht gelesen werden"
+    },
+    "preparing": {
+      "startTitle": "Deine Lektion wird vorbereitet",
+      "startBody": "Wir lesen die von dir gewählten Seiten ein, damit dein Lehrer sie bereit hat. Bei gescannten Dokumenten kann das ein bis zwei Minuten dauern.",
+      "updateTitle": "Deine Seiten werden aktualisiert",
+      "updateBody": "Wir lesen die neu gewählten Seiten ein. Bei gescannten Dokumenten kann das ein bis zwei Minuten dauern – deine Lektion wird fortgesetzt, sobald sie bereit sind.",
+      "status": "Deine Seiten werden gelesen…",
+      "hint": "Das dauert in der Regel 1–2 Minuten. Bitte lass dieses Fenster geöffnet.",
+      "retry": "Erneut versuchen",
+      "errorTitle": "Deine Seiten konnten nicht vorbereitet werden",
+      "errorBody": "Beim Lesen deiner Seiten ist etwas schiefgelaufen. Bitte versuche es erneut."
     }
   },
   "controls": {
@@ -146,7 +160,8 @@
       "open": "Sitzungseinstellungen",
       "close": "Einstellungen schließen"
     },
-    "liveCaptions": "Live-Untertitel"
+    "liveCaptions": "Live-Untertitel",
+    "teacherAsks": "Lehrer fragt"
   },
   "workspaceMenu": {
     "menu": "Menü",

@@ -37,16 +37,15 @@
     "yourDocuments": "Your documents",
     "orUploadNew": "Or upload a new file",
     "uploadTitle": "Upload a Lesson Source",
-    "pdfLimit": "PDF files up to 25MB.",
+    "pdfLimit": "PDF files up to 30MB.",
     "dropHint": "Drop a file here, or <choose>choose file</choose>",
-    "pdfHint": "Use a text-based PDF. Image-only or scanned documents can't be read and won't work.",
     "uploadingTitle": "Uploading your document",
     "uploadingBody": "Sending your file — please keep this tab open.",
     "processingTitle": "Preparing your document",
     "processingBody": "Extracting pages, building lesson passages, and warming up the teacher.",
     "loadingLibrary": "Loading your library…",
     "errorType": "That file isn’t a PDF. Please choose a PDF document.",
-    "errorSize": "That file is too large. Please choose a PDF under 25MB.",
+    "errorSize": "That file is too large. Please choose a PDF under 30MB.",
     "dropActive": "Release to upload your PDF",
     "dropAria": "Upload a PDF — drop a file here or choose one"
   },
@@ -97,7 +96,22 @@
       "pageLabel": "Page {{page}}",
       "pageAtMost": "You can pick at most {{max}} pages",
       "updatePages": "Update pages",
-      "startLesson": "Start lesson"
+      "startLesson": "Start lesson",
+      "ready": "{{ready}} of {{total}} pages ready",
+      "pageExtracting": "Page {{page}} is being read…",
+      "pagePending": "This page isn't ready yet",
+      "pageFailed": "This page couldn't be read"
+    },
+    "preparing": {
+      "startTitle": "Preparing your lesson",
+      "startBody": "We're reading the pages you picked so your teacher has them ready. This can take a minute or two for scanned documents.",
+      "updateTitle": "Updating your pages",
+      "updateBody": "We're reading the new pages you picked. This can take a minute or two for scanned documents — your lesson continues once they're ready.",
+      "status": "Reading your pages…",
+      "hint": "This usually takes 1–2 minutes. Please keep this open.",
+      "retry": "Try again",
+      "errorTitle": "We couldn't prepare your pages",
+      "errorBody": "Something went wrong while reading your pages. Please try again."
     }
   },
   "controls": {
@@ -146,7 +160,8 @@
       "open": "Session settings",
       "close": "Close settings"
     },
-    "liveCaptions": "Live captions"
+    "liveCaptions": "Live captions",
+    "teacherAsks": "Teacher asks"
   },
   "workspaceMenu": {
     "menu": "Menu",
