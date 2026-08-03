@@ -1,12 +1,3 @@
-import type { SpeechLanguageOption } from "@/types";
-
-export const SPEECH_LANGUAGES = [
-  { value: "ja", label: "Japanese" },
-  { value: "en", label: "English" },
-  { value: "ar", label: "Arabic" },
-  { value: "", label: "Auto" }
-] satisfies SpeechLanguageOption[];
-
 export const GREETING_PROMPT = "START THE LESSON";
 
 export const CONTINUE_PROMPT = "CONTINUE";
@@ -34,6 +25,3 @@ export const VAD_ASSET_BASE = "https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0
 export const ORT_WASM_BASE = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.27.0/dist/";
 
 export const ACCEPTED_UPLOAD_TYPES = ".pdf,application/pdf";
-
-// Keep in sync with DOCUMENT_LIMIT_BYTES in back-end document-upload middleware.
-export const MAX_UPLOAD_BYTES = 30 * 1024 * 1024;
